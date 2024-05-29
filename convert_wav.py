@@ -2,7 +2,7 @@ import os
 from pydub import AudioSegment
 
 # Define the directory to search
-directory = "/home/skorn/podcasts"
+directory = "/media/podcasts/data/podcasts/"
 
 # Define the sample rate
 # WhisperCpp requires a sample rate of 16 kHz
