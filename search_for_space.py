@@ -11,14 +11,14 @@ db_file = f"{clip_dir}/metadata.db"
 
 
 
-def save_clip(audio_file, start_time, stop_time, output_directory, filename):
-    audio = AudioSegment.from_file(audio_file)
-    # Cut the audio
-    cut_audio = audio[start_time:stop_time]
-    # Save the cut audio to the output directory
-    clip_full_filepath = output_directory + "/" + filename
-    print("Saving clip to: ", clip_full_filepath)
-    cut_audio.export(clip_full_filepath, format="mp3")
+# def save_clip(audio_file, start_time, stop_time, output_directory, filename):
+#     audio = AudioSegment.from_file(audio_file)
+#     # Cut the audio
+#     cut_audio = audio[start_time:stop_time]
+#     # Save the cut audio to the output directory
+#     clip_full_filepath = output_directory + "/" + filename
+#     print("Saving clip to: ", clip_full_filepath)
+#     cut_audio.export(clip_full_filepath, format="mp3")
 
 def db_init():
     conn = sqlite3.connect(db_file)
@@ -47,6 +47,35 @@ def clip_exists(original_file, start_time, stop_time):
     ''', (original_file, start_time, stop_time))
     return cursor.fetchone() is not None
 
+def open_transcription_file(tf):
+    with open(tf, "r") as f:
+        data = json.load(f)
+    try:
+        return flatten_transcription(data["transcription"])
+    except KeyError:
+        raise ValueError("Transcription file is corrupted")
+    
+
+def flatten_transcription(transcription):
+    return [(t["text"].lower().strip(),t["offsets"]["from"],t["offsets"]["to"]) for t in transcription]
+
+
+def find_target_phrase(transcript, word1="the", word2="space"):
+    found_space = []
+    for i in range(0,len(transcript)):
+        if transcript[i][0].find("space") != -1:
+            found_space.append(i)
+
+
+    target_clips = []
+    # find instances of the word "the" before the word "space"
+    for space_found in found_space:
+        if transcript[space_found - 1][0].find("the") != -1:
+            print(space_found)
+            target_clips.append(space_found)
+
+    return target_clips
+
 # # Recursively search directory for .json files
 # for file in glob.glob(wav_dir + "/**/*.json", recursive=True):
 #     index = 0
@@ -64,32 +93,28 @@ def clip_exists(original_file, start_time, stop_time):
 #             save_clip(audio_file, offsets["from"], offsets["to"], clip_dir, f"{audio_file.name}-{index}.mp3")
 #             index += 1
 
-def open_transcription_file(tf):
-    with open(tf, "r") as f:
-        data = json.load(f)
-    try:
-        return data["transcription"]
-    except KeyError:
-        raise ValueError("Transcription file is corrupted")
-
-b = open_transcription_file("/Users/samkorn/Documents/repos/ai_whisper_stuff/audio_data/SLP/2023/2023.12.31 Are Covenants Necessary for Bitcoin with Brandon Black (SLP537).json")
-b = open_transcription_file("/Users/samkorn/Documents/repos/ai_whisper_stuff/audio_data/SLP/2023/2023.12.15 The Great Drivechain Debate with Paul Sztorc and Peter Todd (SLP533).json")
-
-# find instances of the word "space"
-found_space = []
-for i in range(0,len(b)):
-    if b[i]["text"].lower().find("space") != -1:
-        found_space.append(i)
 
 
-target_clips = []
-# find instances of the word "the" before the word "space"
-for space_found in found_space:
-    if "the" in b[space_found - 1]["text"]:
-        print(space_found)
-        target_clips.append(space_found)
+def example():
+    b = open_transcription_file("/Users/samkorn/Documents/repos/ai_whisper_stuff/audio_data/SLP/2023/2023.12.31 Are Covenants Necessary for Bitcoin with Brandon Black (SLP537).json")
+    b = open_transcription_file("/Users/samkorn/Documents/repos/ai_whisper_stuff/audio_data/SLP/2023/2023.12.15 The Great Drivechain Debate with Paul Sztorc and Peter Todd (SLP533).json")
 
 
+    flat_transcript = flatten_transcription(transcript)
+
+        # find instances of the word "space"
+    found_space = []
+    for i in range(0,len(flat_transcript)):
+        if flat_transcript[i][0].lower().find("space") != -1:
+            found_space.append(i)
+
+
+    target_clips = []
+    # find instances of the word "the" before the word "space"
+    for space_found in found_space:
+        if "the" in flat_transcript[space_found - 1][0]:
+            print(space_found)
+            target_clips.append(space_found)
 
 
 
