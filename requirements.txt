@@ -1,3 +1,4 @@
 getpodcast
 pydub
 sh
+pygame
